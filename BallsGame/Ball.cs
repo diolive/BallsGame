@@ -49,11 +49,15 @@ namespace BallsGame
 
             if (newPosition.X + _radius > boundingBox.Right)
             {
-               float actualX1 = Game.Window.ClientBounds.Width - _radius;
-               float actualY1 = _position.Y + (actualX1 - _position.X) / (newPosition.X - _position.X) * (newPosition.Y - _position.Y);
+                float percentageBeforeCollide = (boundingBox.Right - _position.X - _radius) / (newPosition.X - _position.X);
+                if (percentageBeforeCollide < 0.99)
+                {
+                    Move(percentageBeforeCollide * time);
+                    time -= percentageBeforeCollide * time;
+                }
 
-               newPosition = new Vector2(actualX1, actualY1);
-               _moveDirection = MathHelper.Pi - _moveDirection;
+                _moveDirection = MathHelper.Pi - _moveDirection;
+                Move(time);
             }
             else if (newPosition.X - _radius < 0)
             {
