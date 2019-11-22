@@ -11,7 +11,7 @@ namespace BallsGame
         private Color _color;
         private SpriteEffects _effects;
         private Color _hoveredColor;
-        private float _moveDirection;
+        private Direction _moveDirection;
         private Vector2 _origin;
         private Vector2 _position;
         private float _radius;
@@ -25,6 +25,9 @@ namespace BallsGame
             : base(game)
         {
         }
+
+        public float MoveDirection => _moveDirection.Angle;
+        public Vector2 Position => _position;
 
         public BallControl Control { get; set; }
 
@@ -44,7 +47,7 @@ namespace BallsGame
 
         private Vector2 Move(float time)
         {
-            Vector2 newPosition = _position + Vector2.Transform(Vector2.UnitX * (time * _velocity), Matrix.CreateRotationZ(_moveDirection));
+            Vector2 newPosition = _position + Vector2.Transform(Vector2.UnitX * (time * _velocity), Matrix.CreateRotationZ(_moveDirection.Angle));
             var boundingBox = new Rectangle(Point.Zero, Game.Window.ClientBounds.Size);
 
             if (newPosition.X + _radius > boundingBox.Right)
@@ -56,7 +59,7 @@ namespace BallsGame
                     time -= percentageBeforeCollide * time;
                 }
 
-                _moveDirection = MathHelper.Pi - _moveDirection;
+                _moveDirection.FlipX();
                 Move(time);
             }
             else if (newPosition.X - _radius < 0)
@@ -65,7 +68,7 @@ namespace BallsGame
                 float actualY2 = _position.Y + (actualX2 - _position.X) / (newPosition.X - _position.X) * (newPosition.Y - _position.Y);
 
                 newPosition = new Vector2(actualX2, actualY2);
-                _moveDirection = MathHelper.Pi - _moveDirection;
+                _moveDirection.FlipX();
             }
 
             if (newPosition.Y + _radius > Game.Window.ClientBounds.Height)
@@ -74,7 +77,7 @@ namespace BallsGame
                 float actualX3 = _position.X + (actualY3 - _position.Y) / (newPosition.Y - _position.Y) * (newPosition.X - _position.X);
 
                 newPosition = new Vector2(actualX3, actualY3);
-                _moveDirection = -_moveDirection;
+                _moveDirection.FlipY();
             }
             else if (newPosition.Y - _radius < 0)
             {
@@ -82,7 +85,7 @@ namespace BallsGame
                 float actualX4 = _position.X + (actualY4 - _position.Y) / (newPosition.Y - _position.Y) * (newPosition.X - _position.X);
 
                 newPosition = new Vector2(actualX4, actualY4);
-                _moveDirection = -_moveDirection;
+                _moveDirection.FlipY();
             }
 
             return newPosition;
@@ -108,7 +111,7 @@ namespace BallsGame
             _scale = 0.1f; //(float) RandomHelper.Instance.NextDouble();
             _origin = _texture.Bounds.Size.ToVector2() / 2f;
             _velocity = 0.3f;
-            _moveDirection = (float) (RandomHelper.Instance.NextDouble() * MathHelper.TwoPi);
+            _moveDirection = new Direction((float) (RandomHelper.Instance.NextDouble() * MathHelper.TwoPi));
             RecalculateRadius();
         }
 
@@ -139,7 +142,7 @@ namespace BallsGame
 
         private void Turn(float angle)
         {
-            _moveDirection = (_moveDirection + angle) % MathHelper.TwoPi;
+            _moveDirection.Angle += angle;
         }
 
         private bool ContainsPoint(Point point)

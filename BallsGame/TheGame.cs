@@ -15,8 +15,10 @@ namespace BallsGame
     public class TheGame : Game
     {
         private Color _backgroundColor;
+        private Spot _spot;
         private Ball _targetBall1;
         private Ball _targetBall2;
+        private List<Wall> _walls;
 
         public TheGame()
         {
@@ -63,12 +65,29 @@ namespace BallsGame
             //        };
             //    });
 
-            for (var i = 0; i < 100; i++)
+            //for (var i = 0; i < 100; i++)
+            //{
+            //    AddComponent<Ball>();
+            //}
+
+            int bottom = Window.ClientBounds.Bottom;
+            int right = Window.ClientBounds.Right;
+
+            _walls = new List<Wall>
             {
-                AddComponent<Ball>();
-            }
+                new Wall(Vector2.Zero, new Vector2(0, bottom)),
+                new Wall(new Vector2(0, bottom), new Vector2(right, bottom)),
+                new Wall(Vector2.Zero, new Vector2(right, 0)),
+                new Wall(new Vector2(right, 0), new Vector2(right, bottom))
+            };
 
             AddComponent<Cursor>();
+            _spot = AddComponent<Spot>()
+                .Apply(spot =>
+                {
+                    spot.Color = Color.Red;
+                    spot.Scale = new Vector2(0.5f);
+                });
         }
 
         /// <summary>
@@ -125,6 +144,15 @@ namespace BallsGame
             foreach (Ball eatenBall in eatenBalls)
             {
                 Components.Remove(eatenBall);
+            }
+
+            _spot.Visible = false;
+            foreach (Vector2? i in _walls
+                .Select(wall => wall.Intersection(_targetBall1.Position, _targetBall1.MoveDirection))
+                .Where(i => i.HasValue))
+            {
+                _spot.Visible = true;
+                _spot.Position = i.Value.ToPoint();
             }
 
             base.Update(gameTime);
