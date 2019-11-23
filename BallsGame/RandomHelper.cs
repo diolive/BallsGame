@@ -2,8 +2,8 @@
 
 namespace BallsGame
 {
-    public static class RandomHelper
-    {
-        public static Random Instance { get; } = new Random();
-    }
+	public static class RandomHelper
+	{
+		public static Random Instance { get; } = new Random();
+	}
 }

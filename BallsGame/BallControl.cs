@@ -1,15 +1,12 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using BallsGame.Control;
 
 namespace BallsGame
 {
-    public class BallControl
-    {
-        public Keys TurnLeft { get; set; }
-        public Keys TurnRight { get; set; }
-        public Keys Enlarge { get; set; }
-        public Keys Reduce { get; set; }
-
-        public float TurnVelocity { get; set; } = 0.003f;
-        public float EnlargeReduceRate { get; set; } = 0.002f;
-    }
+	public class BallControl
+	{
+		public IControl TurnLeft { get; set; }
+		public IControl TurnRight { get; set; }
+		public IControl Enlarge { get; set; }
+		public IControl Reduce { get; set; }
+	}
 }
