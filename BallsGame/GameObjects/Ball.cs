@@ -65,40 +65,56 @@ namespace BallsGame.GameObjects
 
 			if (newPosition.X + _radius > boundingBox.Right)
 			{
-				float percentageBeforeCollide = (boundingBox.Right - Position.X - _radius) / (newPosition.X - Position.X);
+				float percentageBeforeCollide = (boundingBox.Right - _radius - Position.X ) / (newPosition.X - Position.X);
 				if (percentageBeforeCollide < 0.99)
 				{
-					Move(percentageBeforeCollide * time);
-					time *= 1 - percentageBeforeCollide;
+					float timeBeforeCollide = percentageBeforeCollide * time;
+					Move(timeBeforeCollide);
+					time -= timeBeforeCollide;
 				}
 
 				_velocity.FlipX();
-				Move(time);
+				newPosition = Move(time);
 			}
 			else if (newPosition.X - _radius < 0)
 			{
-				float actualX2 = _radius;
-				float actualY2 = Position.Y + (actualX2 - Position.X) / (newPosition.X - Position.X) * (newPosition.Y - Position.Y);
+				float percentageBeforeCollide = (_radius - Position.X) / (newPosition.X - Position.X);
+				if (percentageBeforeCollide < 0.99)
+				{
+					float timeBeforeCollide = percentageBeforeCollide * time;
+					Move(timeBeforeCollide);
+					time -= timeBeforeCollide;
+				}
 
-				newPosition = new Vector2(actualX2, actualY2);
 				_velocity.FlipX();
+				newPosition = Move(time);
 			}
 
 			if (newPosition.Y + _radius > _clientBounds.Height)
 			{
-				float actualY3 = _clientBounds.Height - _radius;
-				float actualX3 = Position.X + (actualY3 - Position.Y) / (newPosition.Y - Position.Y) * (newPosition.X - Position.X);
+				float percentageBeforeCollide = (boundingBox.Bottom - _radius - Position.Y) / (newPosition.Y - Position.Y);
+				if (percentageBeforeCollide < 0.99)
+				{
+					float timeBeforeCollide = percentageBeforeCollide * time;
+					Move(timeBeforeCollide);
+					time -= timeBeforeCollide;
+				}
 
-				newPosition = new Vector2(actualX3, actualY3);
 				_velocity.FlipY();
+				newPosition = Move(time);
 			}
 			else if (newPosition.Y - _radius < 0)
 			{
-				float actualY4 = _radius;
-				float actualX4 = Position.X + (actualY4 - Position.Y) / (newPosition.Y - Position.Y) * (newPosition.X - Position.X);
+				float percentageBeforeCollide = (_radius - Position.Y) / (newPosition.Y - Position.Y);
+				if (percentageBeforeCollide < 0.99)
+				{
+					float timeBeforeCollide = percentageBeforeCollide * time;
+					Move(timeBeforeCollide);
+					time -= timeBeforeCollide;
+				}
 
-				newPosition = new Vector2(actualX4, actualY4);
 				_velocity.FlipY();
+				newPosition = Move(time);
 			}
 
 			return newPosition;
