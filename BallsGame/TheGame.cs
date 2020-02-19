@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 using BallsGame.Control;
+using BallsGame.GameObjects;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,19 +16,20 @@ namespace BallsGame
 	public class TheGame : Game
 	{
 		private Color _backgroundColor;
+		private List<GameObject> _gameObjects;
+
+		private GraphicsDeviceManager _graphics;
 		private Spot _spot;
+		private SpriteBatch _spriteBatch;
 		private Ball _targetBall1;
 		private Ball _targetBall2;
 		private List<Wall> _walls;
 
 		public TheGame()
 		{
-			Graphics = new GraphicsDeviceManager(this);
+			_graphics = new GraphicsDeviceManager(this);
 			Content.RootDirectory = "Content";
 		}
-
-		public GraphicsDeviceManager Graphics { get; }
-		public SpriteBatch SpriteBatch { get; private set; }
 
 		/// <summary>
 		///     Allows the game to perform any initialization it needs to before starting to run.
@@ -43,34 +43,51 @@ namespace BallsGame
 
 			base.Initialize();
 
-			_targetBall1 = AddComponent<Ball>()
-				.Apply(ball =>
+			//Window.IsBorderless = true;
+		}
+
+		/// <summary>
+		///     LoadContent will be called once per game and is the place to load
+		///     all of your content.
+		/// </summary>
+		protected override void LoadContent()
+		{
+			// Create a new SpriteBatch, which can be used to draw textures.
+			_spriteBatch = new SpriteBatch(GraphicsDevice);
+
+			// TODO: use this.Content to load your game content here
+			_backgroundColor = new Color(20, 20, 20);
+
+			_gameObjects = new List<GameObject>();
+
+			_targetBall1 = new Ball(Window.ClientBounds, Content)
+			{
+				Control = new BallControl
 				{
-					ball.Control = new BallControl
-					{
-						TurnLeft = new KeyboardControl(Keys.A),
-						TurnRight = new KeyboardControl(Keys.D),
-						Enlarge = new KeyboardControl(Keys.W),
-						Reduce = new KeyboardControl(Keys.S)
-					};
-				});
+					TurnLeft = new KeyboardControl(Keys.A),
+					TurnRight = new KeyboardControl(Keys.D),
+					Enlarge = new KeyboardControl(Keys.W),
+					Reduce = new KeyboardControl(Keys.S)
+				}
+			};
+			_gameObjects.Add(_targetBall1);
 
-			//_targetBall2 = AddComponent<Ball>()
-			//    .Apply(ball =>
-			//    {
-			//        ball.Control = new BallControl
-			//        {
-			//            TurnLeft = Keys.NumPad4,
-			//            TurnRight = Keys.NumPad6,
-			//            Enlarge = Keys.NumPad8,
-			//            Reduce = Keys.NumPad2
-			//        };
-			//    });
+			_targetBall2 = new Ball(Window.ClientBounds, Content)
+			{
+				Control = new BallControl
+				{
+					TurnLeft = new KeyboardControl(Keys.NumPad4),
+					TurnRight = new KeyboardControl(Keys.NumPad6),
+					Enlarge = new KeyboardControl(Keys.NumPad8),
+					Reduce = new KeyboardControl(Keys.NumPad2)
+				}
+			};
+			_gameObjects.Add(_targetBall2);
 
-			//for (var i = 0; i < 100; i++)
-			//{
-			//    AddComponent<Ball>();
-			//}
+			for (var i = 0; i < 100; i++)
+			{
+				_gameObjects.Add(new Ball(Window.ClientBounds, Content));
+			}
 
 			int bottom = Window.ClientBounds.Bottom;
 			int right = Window.ClientBounds.Right;
@@ -83,26 +100,9 @@ namespace BallsGame
 				new Wall(new Vector2(right, 0), new Vector2(right, bottom))
 			};
 
-			AddComponent<Cursor>();
-			_spot = AddComponent<Spot>()
-				.Apply(spot =>
-				{
-					spot.Color = Color.Red;
-					spot.Scale = new Vector2(0.5f);
-				});
-		}
+			_gameObjects.Add(new Cursor(Content));
 
-		/// <summary>
-		///     LoadContent will be called once per game and is the place to load
-		///     all of your content.
-		/// </summary>
-		protected override void LoadContent()
-		{
-			// Create a new SpriteBatch, which can be used to draw textures.
-			SpriteBatch = new SpriteBatch(GraphicsDevice);
-
-			// TODO: use this.Content to load your game content here
-			_backgroundColor = new Color(20, 20, 20);
+			_spot = new Spot(Content);
 		}
 
 		/// <summary>
@@ -128,36 +128,35 @@ namespace BallsGame
 
 			if (Keyboard.GetState().IsKeyDown(Keys.Space))
 			{
-				AddComponent<Ball>();
+				_gameObjects.Add(new Ball(Window.ClientBounds, Content));
 			}
 
 			// TODO: Add your update logic here
-			var eatenBalls = new List<Ball>();
-
-			foreach (Ball ball in Components.OfType<Ball>())
-			{
-				if (ball != _targetBall1 && ball.IntersectsWith(_targetBall1))
-				{
-					eatenBalls.Add(ball);
-					_targetBall1.Eat();
-				}
-			}
+			List<Ball> eatenBalls = _gameObjects
+				.OfType<Ball>()
+				.Where(ball => ball != _targetBall1 && ball.IntersectsWith(_targetBall1))
+				.ToList();
 
 			foreach (Ball eatenBall in eatenBalls)
 			{
-				Components.Remove(eatenBall);
+				_targetBall1.Eat();
+				_gameObjects.Remove(eatenBall);
 			}
 
 			_spot.Visible = false;
+
 			foreach (Vector2? i in _walls
 				.Select(wall => wall.Intersection(_targetBall1.Position, _targetBall1.MoveDirection))
 				.Where(i => i.HasValue))
 			{
 				_spot.Visible = true;
-				_spot.Position = i.Value.ToPoint();
+				_spot.Position = i.Value;
 			}
 
-			base.Update(gameTime);
+			foreach (GameObject gameObject in _gameObjects)
+			{
+				gameObject.Update(gameTime);
+			}
 		}
 
 		/// <summary>
@@ -169,23 +168,13 @@ namespace BallsGame
 			GraphicsDevice.Clear(_backgroundColor);
 
 			// TODO: Add your drawing code here
-			SpriteBatch.Begin();
-			base.Draw(gameTime);
-			SpriteBatch.End();
-		}
+			_spriteBatch.Begin();
+			foreach (GameObject gameObject in _gameObjects)
+			{
+				gameObject.Draw(_spriteBatch);
+			}
 
-		private T AddComponent<T>()
-			where T : IGameComponent
-		{
-			ConstructorInfo ctor = typeof(T).GetConstructor(new[] { typeof(Game) })
-								   ?? throw new ArgumentException("GameObject should contain public constructor receiving Game object");
-
-			var gameObject = (T)ctor.Invoke(new object[] { this });
-
-			Components.Add(gameObject);
-			gameObject.Initialize();
-
-			return gameObject;
+			_spriteBatch.End();
 		}
 	}
 }

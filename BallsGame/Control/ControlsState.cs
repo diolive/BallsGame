@@ -7,10 +7,10 @@ namespace BallsGame.Control
 {
 	public class ControlsState : IControlsState
 	{
+		private readonly IDictionary<int, GamePadState> _gamePadStates;
 		private KeyboardState? _keyboardState;
 		private MouseState? _mouseState;
 		private TouchCollection? _touchPanelState;
-		private IDictionary<int, GamePadState> _gamePadStates;
 
 		public ControlsState()
 		{
